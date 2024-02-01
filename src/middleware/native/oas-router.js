@@ -56,10 +56,16 @@ export class OASRouter extends OASBase {
             .map(async ([method, methodObj]) => {
               const tmp = {};
               const opId = methodObj.operationId ?? commons.generateName(expressPath, "function");
-              const opControllerName = methodObj['x-router-controller'] ?? controllerName;
-              const path = commons.filePath(config.controllers, opControllerName);
+              let opControllerName = methodObj['x-router-controller'] ?? controllerName;
+              const controllerNameSplit = opControllerName.split('/');
+              let controllerDir = config.controllers;
+              if (controllerNameSplit.length > 1) { // in case controller name includes sub directory path
+                opControllerName = controllerNameSplit.pop();
+                controllerDir = [controllerDir, ...controllerNameSplit].join('/');
+              }
+              const path = commons.filePath(controllerDir, opControllerName);
 
-              if (!path) throw new errors.RoutingError(`Controller ${opControllerName} not found`);
+              if (!path) throw new errors.RoutingError(`Controller ${opControllerName} not found in ${controllerDir}`);
 
               tmp[expressPath] = {
                 ...tmp[expressPath],
